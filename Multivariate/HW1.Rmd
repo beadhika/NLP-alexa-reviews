@@ -1,0 +1,145 @@
+---
+title: "HW1_Multivariate"
+author: "Benjan"
+date: "10/21/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1 
+### a.
+The dimensions of a matrix is denoted by m times n where m is the number of rows and n is the number of columns. So, a n times 3 matrix has n rows and 3 columns. Here is an example of 2 times 3 matrix:
+```{r}
+m1 <- matrix(c(1,2,3,4,5,6),nrow=2,byrow=TRUE)
+m1
+```
+
+### b.
+We can use the same elements of m1 but change the number of rows and columns: 
+```{r}
+m2 <- matrix(c(1,2,3,4,5,6),nrow=3,byrow=TRUE)
+m2
+```
+
+## Problem 2 
+For a matrix multiplication A times B, the column number of A should match the row number of B. The resulting matrix is has the row number of A and column number of B. 
+
+### a.
+Here A is 2 by 2 matrix and B is 2 by 3 matrix. From the statement above, the matrix multiplication is valid and we get a 2 by 3 matrix. 
+```{r}
+A_2a <- matrix(c(2,-1,1,2),nrow=2,byrow=TRUE)
+B_2a <- matrix(c(1,1,2,2,0,1),nrow=2,byrow=TRUE)
+A_2a %*% B_2a
+```
+
+### b. 
+Here A is 3 by 2 matrix and B is 2 by 3 matrix. The matrix multiplication is possible and gives us 3 by 3 matrix.
+```{r}
+A_2b <-matrix(c(1,0,2,1,-2,1),nrow=3,byrow=TRUE)
+B_2b <- matrix(c(1,1,2,2,0,1),nrow=2,byrow=TRUE)
+A_2b %*% B_2b
+```
+
+### c.
+Here A is 3 by 2 matrix and B is 1 by 3. The column number of A does not match with the row number of B and thus the matrix multiplication is not possible. 
+
+## Problem 3
+A matrix is invertible (has an inverse) if its determinant is non-zero. A matrix times its inverse gives us identity matrix which is a square matrix with 1's in diagonal and 0's everwhere else. 
+
+## a.
+Let's calculate the deteminant: 
+```{r}
+A_3a <- matrix(c(2,1,1,2),nrow=2,byrow=TRUE)
+det(A_3a) #determinant 
+```
+
+As the matrix has non-zero determinant, it has an inverse (the question does not asks us to calculate it). The matrix times its inverse is an identity matrix as follows: 
+```{r}
+matrix(c(1,0,0,1),nrow=2,byrow=TRUE)
+```
+
+## b.
+Following the same steps as a:
+```{r}
+B_3a <- matrix(c(2,0,1,0),nrow=2,byrow=TRUE)
+det(B_3a) #determinant
+```
+
+As the matrix has zero determinant,it does not have an inverse. Hence the expression is not solvable.
+
+## Problem 4
+Lets read the files first and see the first few observations.
+```{r}
+women <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/womens_track.csv")
+men <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/mens_track.csv")
+head(women)
+head(men)
+```
+
+
+### a.
+First thing to remember is that we calculate covariance and correlation only for numeric columns. 
+Let's see the covariance matrix first. 
+```{r}
+cov(women[,1:7])
+```
+
+Now, let's see the correlation matrix.
+```{r}
+cor(women[,1:7])
+```
+The diagonal is insignificant. Also, a correlation matrix is symmetrical matrix, so we will only look at the elements that fall below the diagonal. 
+As we can see the highest correlation is between 3000 meters and 1500 meters followed by between 100 meters and 200 meters. Overall, the elements closer to the diagonal have high value. The reason for this is the smaller the ratio of distances is, the bigger the correlation. For instance, a runner who can do well in 100 meters will likely do well in 200 meters but same cannot be said for a marathon . 
+
+### b. 
+Let's follow the same steps for men's record.
+
+```{r}
+cov(men[,1:7])
+```
+
+
+```{r}
+cor(men[,1:8])
+```
+The correlation matrix looks similar to the women's one and the reasoning for it is same. The highest correlation is between 3000 meters and mystery. 
+
+### c.
+Here's the logic to be followed for this. First, we will look at what columns are common across both dataframes and make a subset with only those columns. Then in those two subsets we will select only the first five observations and merge them by rows. The 'marathon' column is extra in both and 'mystery' column is extra in 'men' dataframe.
+```{r}
+merged <- rbind(women[1:5,-8],men[1:5,-c(7,9)]) 
+```
+
+Now, lets use the 'dist' function.
+```{r}
+round(dist(merged,method='euclidean'),2)
+```
+
+### d.
+Looking at the distance matrix, observation 7 and 9 are most similar and observation 1 and 7 are most disimilar. We determined this by finding the smallest value in the distance matrix for similarity and largest value for dissimilarity. 
+
+## Problem 5.
+### a.
+We can convert the covariance matrix to correlation matrix by using 'cov2cor' function. 
+Lets first record the covariance matrix and then use the function to convert.
+```{r}
+cov <- matrix(c(3.8778,2.8110,3.1480,3.5062,2.8110,2.1210,2.2669,2.5690,3.1480,2.2669,2.6550,2.8341,3.5062,2.5690,2.8341,3.2352),nrow=4,byrow=TRUE)
+cov
+```
+Now, for the correlation matrix. 
+```{r}
+cor = cov2cor(cov)
+cor
+```
+
+### b.
+We can calculate the correlation between variable a and variable b by using this formula. 
+$$ cor(ab) = \frac{cov(ab)}{sd(a)sd(b)} $$ 
+So, using the above formula the correlation between the first two variables is: 
+```{r}
+2.8110 / ((3.8778^0.5)*(2.1210^0.5))
+```
+

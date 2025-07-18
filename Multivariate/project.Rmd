@@ -1,0 +1,141 @@
+---
+title: "project"
+author: "Benjan"
+date: "11/18/2022"
+output: word_document
+---
+Lets read the data first.
+```{r}
+cancer <- read.csv("C:/Users/benja/OneDrive/Desktop/data.csv")
+```
+
+
+# 3. Dimensionality Reduction using PCA 
+Lets examine the data first.
+```{r}
+summary(cancer)
+```
+
+As we can see that the mean of the columns are very different, if we use the unscaled data then only few of the variable will carry major weight in determining the principal components. 
+Thus, we will use the correlation matrix of the numerical columns of the cancer data.
+```{r}
+cancer_pca <- princomp(covmat=cor(cancer[3:32]))
+```
+
+To look at the how significant the components are, we can use the cumulative proportion of variance explained by the components. 
+```{r}
+summary(cancer_pca)
+```
+
+The first two components explain 64 percent of the total variance and thus we will use these two as significant components. This reduces the original dataframe from 30 numerical dimensions to only 2 while preserving majority of the information. 
+
+Lets look more into these two principal components. 
+
+```{r}
+cancer_pca$loadings[,1:2]
+```
+
+The first component seems to be a linear combination of all variables expect _symmetry-se_ , _texture-se_, _fractal-dimension-mean_, _smoothness-se_. 
+
+The second component is linear combination of all except _concave.poin-mean_, _texture_worst_, _concave.point_worst_ and here almost half of the variables are contributing in the opposite direction. 
+
+
+# 5. Factor Analysis
+
+Lets do EFA first.
+We will check the number of factors required. 
+
+```{r}
+sapply(1:6, function(f) factanal(cancer[3:32], factors = f,lower=0.1)$PVAL)
+```
+
+We cannot determine the appropriate number of factors. So, we will choose 2 factors as we believe that 2 is adequate. 
+
+```{r}
+
+final_factors <- factanal(covmat = cor(cancer[3:32]), factors = 2,lower=0.1)
+print(final_factors$loadings,cut =.3)
+```
+
+The larger loadings in the first factor are of radius, area and perimeter while the larger loadings in the second factor are related to smoothness, compactness, symmetry and fractal-dimension. 
+Radius, area and perimeter are things that are easy to measure and have fixed method of measurement, so we said that the first factor was _quantitative_ measures. Symmetry, smoothness are things which are difficult to measure as their interpretation of measurement varies, it is not easy say what things are smooth and how to quantify it. So, we said the second factor is _qualitative_ measures. 
+
+```{r}
+library(sem)
+```
+
+```{r}
+cancer.model <- specifyModel(text = "
+Easy -> radius_mean , lambda1, NA
+Easy -> texture_mean , lambda2 , NA
+Easy -> perimeter_mean , NA , 1
+Easy -> area_mean, lambda3, NA
+Easy -> compactness_mean, lambda4, NA
+Easy -> concavity_mean, lambda5, NA
+Easy -> concave.points_mean, lambda6, NA
+Easy -> radius_se, lambda7, NA
+Easy -> texture_se, lambda8, NA
+Easy -> perimeter_se, lambda9, NA
+Easy -> area_se, lambda10, NA
+Easy -> concave.points_se, lambda11, NA
+Easy -> radius_worst, lambda12, NA
+Easy -> texture_worst, lambda13, NA
+Easy -> perimeter_worst, lambda14, NA
+Easy -> area_worst, lambda15, NA
+Easy -> compactness_worst, lambda16, NA
+Easy -> concavity_worst, lambda17, NA
+Easy -> concave.points_worst, lambda18, NA
+Hard -> smoothness_mean, lambda19, NA
+Hard -> compactness_mean, lambda20, NA
+Hard -> concavity_mean, lambda21, NA
+Hard -> concave.points_mean, lambda22, NA
+Hard -> symmetry_mean, lambda23, NA
+Hard -> fractal_dimension_mean, NA, 1
+Hard -> texture_se, lambda24, NA
+Hard -> smoothness_se, lambda25, NA
+Hard -> compactness_se, lambda26, NA
+Hard -> concavity_se, lambda27, NA
+Hard -> concave.points_se, lambda28, NA
+Hard -> symmetry_se, lambda29, NA
+Hard -> fractal_dimension_se, lambda30, NA
+Hard -> smoothness_worst, lambda31, NA
+Hard -> compactness_worst, lambda32, NA
+Hard -> concavity_worst, lambda33, NA
+Hard -> concave.points_worst, lambda34, NA
+Hard -> symmetry_worst, lambda35, NA
+Hard -> fractal_dimension_worst, lambda36, NA
+radius_mean <-> radius_mean, psi1, NA
+texture_mean <-> texture_mean, psi2, NA
+perimeter_mean <-> perimeter_mean, psi3, NA
+area_mean <-> area_mean, psi4, NA
+smoothness_mean <-> smoothness_mean, psi5, NA
+compactness_mean <-> compactness_mean, psi6, NA
+concavity_mean <-> concavity_mean, psi7, NA
+concave.points_mean <-> concave.points_mean, psi8, NA
+symmetry_mean <-> symmetry_mean, psi9, NA
+fractal_dimension_mean <-> fractal_dimension_mean, psi10, NA
+radius_se <-> radius_se , psi11, NA
+texture_se <-> texture_se, psi12, NA
+perimeter_se <-> perimeter_se, psi13, NA
+area_se <-> area_se, psi14, NA
+smoothness_se <-> smoothness_se, psi15, NA
+compactness_se <-> compactness_se, psi16, NA
+concavity_se <-> concavity_se, psi17, NA
+concave.points_se <-> concave.points_se, psi18, NA
+symmetry_se <-> symmetry_se, psi19, NA
+fractal_dimension_se <-> fractal_dimension_se, psi20, NA
+radius_worst <-> radius_worst, psi21, NA
+texture_worst <-> texture_worst, psi22, NA
+perimeter_worst <-> perimeter_worst, psi23, NA
+area_worst <-> area_worst, psi24, NA
+smoothness_worst <-> smoothness_worst, psi25, NA
+compactness_worst <-> compactness_worst, psi26, NA
+concavity_worst <-> concavity_worst, psi27, NA
+concave.points_worst <-> concave.points_worst, psi28, NA
+symmetry_worst <-> symmetry_worst, psi29, NA
+fractal_dimension_worst <-> fractal_dimension_worst, psi30, NA
+Easy <-> Easy, phi1, NA
+Hard <-> Hard, phi2, NA
+Easy <-> Hard, phi12, NA")
+```
+

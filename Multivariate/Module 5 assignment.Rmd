@@ -1,0 +1,51 @@
+---
+title: "Module 5 assignment"
+author: "Benjan"
+date: "11/8/2022"
+output: word_document
+---
+# 1.
+
+Lets read the data first.
+```{r}
+urlRemote <- "https://raw.githubusercontent.com/"
+pathGithub <- "EricBrownTTU/ISQS6350/main/"
+filename <- "crime.csv"
+crime <- read.csv(paste0(urlRemote, pathGithub, filename))
+```
+
+Now, we calculate the distance. 
+```{r}
+d <- round(dist(crime,diag=TRUE,upper=TRUE),2)
+```
+
+We will use the distance 'd' to perform MDS analysis.
+```{r}
+crime_mds <- cmdscale(d)
+```
+
+Let us plot the cmd data.
+```{r}
+plot(crime_mds, type = "n",
+     xlab = "1st component", ylab = "2nd component",
+     main = "MDS of crime observations")
+text(crime_mds, labels = rownames(crime),cex = 0.6)
+```
+
+# 2
+Lets perform the MDS on correlation data:
+```{r}
+crime_p <- cor(crime[-1])
+crime_p
+crime.mds <- cmdscale(1-abs(crime_p)) #mds distance
+crime.mds
+```
+
+We will plot the data now.
+```{r}
+plot(crime.mds,type="n",xlab = "1st component", ylab = "2nd component",main = "MDS of crime variables")
+text(crime.mds,labels=colnames(crime),cex=0.5)
+```
+
+# 3.
+The data gives us a visualization of similar and dissimilar variables. As _Murder_, _Robbery_ and _Assault_ are closer to each other, they are similar in terms of correlation. 

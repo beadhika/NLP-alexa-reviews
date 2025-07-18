@@ -1,0 +1,68 @@
+---
+title: "Module 4 Assignment"
+author: "Benjan"
+date: "10/31/2022"
+output: word_document
+---
+
+Lets read the file from github.
+```{r}
+urlRemote <- "https://raw.githubusercontent.com/"
+pathGithub <- "EricBrownTTU/ISQS6350/main/"
+filename <- "crime.csv"
+crime <- read.csv(paste0(urlRemote, pathGithub, filename))
+```
+
+# 1.
+Lets conduct a principle component analysis on the covariance matrix. 
+```{r}
+s <- cov(crime[-1]) # the first column is not numeric
+crime_pca <- princomp(covmat=s)
+```
+
+Now, we can see what proportion of variance are explained by the components.
+```{r}
+summary(crime_pca)
+```
+
+As we can see in the 'cumulative proportion' that 87 percent of the variability is explained by the first component, the first component represents a reasonable proportion of variability. 
+
+Let us check this with the mean variance. We will consider the component only if its variance is greater than mean variance. 
+```{r}
+crime_pca$sdev^2 > mean(crime_pca$sdev^2)
+```
+Our decision is confirmed by preceding calculation. 
+
+# 2.
+The first principle component is:
+```{r}
+crime_pca$loadings[,1]
+```
+As we can see, the first principle component is most influenced by __Burglary__ and __Larceny__ and it is a weighted sum of these two variables. 
+
+```{r}
+crime_pca$loadings[,2]
+```
+The second principle component is most influenced by __Burglary__ and __Larceny__
+and __Auto__ with __Larceny__ contributing in opposite direction. 
+
+# 3.
+First, let's set the rownames of the dataset by the state name.
+
+```{r}
+rownames(crime) <- crime[,1]
+```
+
+```{r}
+crime.pca <- princomp(crime[,-1],cor=TRUE)
+biplot(crime.pca, col = c("black","red"), cex = 0.5)
+```
+
+From the biplot, MISSISSIPPI has strong second component, NEVADA has strong first component and HAWAII has very low second component. Similarly, NEVADA is towards the RAPE arrow, so it must have a high RAPE score. The AUTO and LARCENCY arrows point opposite to MISSISSIPPI, so it should have very low values in these variables. 
+
+Lets look at the z-scores for validation.
+```{r}
+round(scale(crime[,-1]),2)
+```
+
+We can see that our observations from the biplots are validated by the z-scores.

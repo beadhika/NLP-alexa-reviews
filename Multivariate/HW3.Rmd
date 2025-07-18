@@ -1,0 +1,326 @@
+---
+title: "HW3 Multi"
+author: "Benjan"
+date: "11/24/2022"
+output: word_document
+---
+# Problem 1.
+Lets create the correlation matrix first.
+```{r}
+r <- matrix(c(1.00,0.44,0.41,0.29,0.33,0.25,
+              0.44,1.00,0.35,0.35,0.32,0.33,
+              0.41,0.35,1.00,0.16,0.19,0.18,
+              0.29,0.35,0.16,1.00,0.59,0.47,
+              0.33,0.32,0.19,0.59,1.00,0.46,
+              0.25,0.33,0.18,0.47,0.46,1.00), nrow = 6, byrow = TRUE)
+row.names(r) <- c('French','English','History','Arithmetic','Algebra','Geometry')
+colnames(r) <- c('French','English','History','Arithmetic','Algebra','Geometry')
+```
+
+## a.
+Perfoming EFA on the matrix:
+```{r}
+efa <- factanal(covmat = r, factors = 2)
+print(efa$loadings,cut=0.5)
+```
+
+We can see that the Math courses are related to each other and remaining variables form another group. 
+
+## b.
+Now, let perform EFA for 3 factors.
+```{r}
+efa_3 <- factanal(covmat = r, factors = 3)
+print(efa_3$loadings,cut=0.5)
+```
+
+The first factor is Math and the second factor is language and other non-Math courses.
+
+## c.
+'Varimax rotation' which is a orthogonal rotation is used as default. Varimax rotation simplifies the interpretation from factor analysis. It gives us extreme values, few very large and many near-zero and so, few factors are needed to explain each variable. There is less overlap between factors and it is easy to separate them. 
+
+## d.
+Lets do the part without rotation.
+```{r}
+efa_nr <- factanal(covmat = r, factors = 2,rotation='none')
+print(efa_nr$loadings)
+```
+
+Because we did not apply varimax rotation, all the greater loading values are in factor 1. It is difficult to explain the relationship among factors as the separations are not clear. 
+
+# Problem 2. 
+Lets read the data first.
+```{r}
+genes <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/geneexpression.csv", header = FALSE)
+head(genes)
+```
+
+## a. 
+The correlation matrix and the distance matrix of it are:
+```{r}
+genes_r <- cor(genes)
+d <- as.dist(genes_r)
+```
+
+Lets conduct average linkage clustering.
+```{r}
+hca <- hclust(d, "average")
+plot(hca, main = "Average Linkage HC Dendrogram",cex=0.6)
+
+```
+
+## b.
+From the dendogram, it looks like there are two clusters.Lets look at the scree plot.
+```{r}
+plot(rev(hca$height))
+```
+
+From the scree plot , theres seems to be three clusters rather than two. 
+Lets force them into two groups and see if we get 20 in each.
+```{r}
+cta <- cutree(hca, 2)
+table(cta)
+```
+
+Almost all of them fall in the same group. We can see that average clustering does not work. 
+
+## c. 
+Now, lets try single and complete clustering.
+
+__Single__
+
+```{r}
+hcs <- hclust(d, "single")
+plot(hcs, main = "single Linkage HC Dendrogram",cex=0.6)
+```
+
+
+```{r}
+plot(rev(hcs$height))
+```
+
+It looks like almost all of them fall in one cluster and only a few in another. 
+Lets put them in two clusters and check.
+```{r}
+cts <- cutree(hcs, 2)
+table(cts)
+```
+
+Single clustering fails too.
+
+__Complete__
+
+
+```{r}
+hcc <- hclust(d, "complete")
+plot(hcc, main = "complete Linkage HC Dendrogram",cex=0.6)
+```
+
+
+```{r}
+plot(rev(hcc$height))
+```
+
+There seems to be two clusters.
+Lets put them in two clusters and check.
+```{r}
+ctc <- cutree(hcc, 2)
+table(ctc)
+```
+
+We can see that there are two clusters and although they are not equally divided, complete clustering seems to work the best.
+
+## d.
+For this question , we will use complete clustering. 
+Lets check each groups.
+```{r}
+c1 <- subset(colnames(genes), ctc == 1)
+c1
+```
+
+```{r}
+c2 <- subset(colnames(genes),ctc==2)
+```
+ 
+We will use this information and combine it with the dendogram to visualize the groups.
+
+```{r}
+plot(hcc, main = "complete Linkage HC Dendrogram",cex=0.6)
+```
+
+As we can see, v22 is the lefmost point of the first group and anything to its right is group1. v22 is closer to group2 than any other points in group1 , so the gene v22 differs the most in group 1. 
+Similarly, in group2 v34 and v39 are among the last to join the group as seen in the dendogram and thus these genes differ the most in group2. 
+
+# Problem 3.
+Lets read and scale the data.
+```{r}
+protein <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/protein.csv",
+row.names = "Country")
+protein <- protein[,1:9]
+protein_s <- scale(protein)
+```
+
+Now, we will create the scree plot.
+```{r}
+plot.wgss <- function(mydata, maxc){
+wss <- numeric(maxc)
+for (i in 1:maxc){
+wss[i] <- kmeans(mydata, iter.max = 100,
+centers = i, nstart = 10)$tot.withinss
+}
+plot(1:maxc, wss, type = "b",
+xlab = "Number of Clusters",
+ylab = "Within Groups Sum of Squares",
+main = "Scree Plot")
+}
+
+plot.wgss(protein_s,24)
+```
+
+I think 4 will be a good choice for number of clusters as the rate of decrease of wgss is significant until there. 
+ 
+# b.
+Lets do the kmeans clustering with 4 clusters. 
+```{r}
+km <- kmeans(protein_s, centers = 4, nstart = 10)
+
+```
+
+Lets see how many observations are in each cluster.
+```{r}
+table(km$cluster)
+```
+
+
+Lets see which countries belong in each cluster.
+```{r}
+km$cluster
+```
+
+The WGSS is:
+```{r}
+km$tot.withinss
+```
+
+## c.
+The means of variables for each cluster is:
+```{r}
+round(km$centers,2)
+```
+
+Cluster 2 contains with highest consumption of proteins. Cluster 3 is countries that depend on fish for majority of their protein supply . Cluster 4 is countries with lowest protein consumption and depend on carbs like cereals for their calorie supply. Cluster 1 is countries that heavily depend on fish and dairy for their food supply. 
+
+## d.
+Lets install the library first.
+```{r}
+library(mclust)
+```
+
+Now, we will do the model based clustering.
+```{r}
+mbc.p <- Mclust(protein_s)
+table(mbc.p$classification)
+```
+
+The model choose 3 clusters. The countries in each group are:
+```{r}
+mbc.p$classification
+```
+
+
+The plot is:
+```{r}
+plot(protein_s,col=mbc.p$classification,main='protein clusters')
+
+```
+
+The black, green and red denote the three different clusters. 
+Now, we will make a BIC plot to see which combination of model and number of clusters gives us maximum BIC.
+```{r}
+plot(mbc.p, what = "BIC")
+
+```
+
+As we can see from the BIC plot, VII model and 3 clusters gives us maximum BIC.
+
+We can check the model name.
+```{r}
+mbc.p$modelName
+```
+
+So, the mixture distribution is spherical in shape with unequal volumes. 
+
+## e.
+Lets plot the uncertainty.
+```{r}
+plot(mbc.p, what = "uncertainty", dimens = c(1,9))
+```
+
+There are two major points. We can check this numerically.
+```{r}
+protein.clust.data <- cbind(rownames(protein), mbc.p$classification,
+mbc.p$uncertainty)
+protein.clust.data[order(mbc.p$uncertainty),]
+```
+
+Poland has the highest uncertainty of 17 percent that it falls in class 3 and USSR with 7 percent uncertainty of being in class 1.
+Lets compare the values of Poland with the mean values of group 3.
+
+```{r}
+protein_s['Poland',]
+```
+
+```{r}
+colMeans(protein_s[mbc.p$classification==3,])
+```
+
+From the values above, the uncertainty of Poland lying in group 3 makes sense. 
+
+# Problem 4.
+
+## a.
+Lets read the data first.
+```{r}
+courses <- read.csv("https://raw.githubusercontent.com/EricBrownTTU/ISQS6350/main/Coursetopics.csv",
+                  header = FALSE)
+head(courses)
+```
+
+The column names is the first row. So, we need to do some manipulation.
+```{r}
+names(courses) <- courses[1,]
+courses <- courses[-1,]
+
+```
+
+Now, we will find the rules:
+```{r}
+library(arules)
+myrules <-  apriori(courses, parameter = list(support = 0.01, confidence =
+                                                   0.25, minlen = 1))
+```
+
+It gave us 10454 rules.
+
+## b.
+
+Lets sort the rules by decreasing lift.
+```{r}
+inspect(sort(myrules, by = "lift")[1:5])
+```
+
+The lift for the first relation  is 7.15. This means that when someone takes Data Mining and regression courses but not Cat Data they take Forecasting 7.15 times more than when there is no relation.
+The support is 0.016, which means that the rule is applied in 1.6 percent of transactions.
+The confidence of 1 means that rule has 100 percent predictive accuracy or everytime the left side is satisfied , the right side is satisfied as well.
+
+## c.
+Lets see the rules that contain both Intro and Regression courses.
+```{r}
+courses.rules <- subset(myrules, items %in% "Intro=1" & items %in% "Regression=1")
+```
+
+Lets sort the rules by decreasing lift.
+```{r}
+inspect(sort(courses.rules, by = "lift")[1:5])
+```
+
+As we can see, the relation with forecast has the highest lift. This means that someone who has taken Intro and Regression is more likely to take Forecast than without the relation. So, I would recommend the student to take Forecast. 
